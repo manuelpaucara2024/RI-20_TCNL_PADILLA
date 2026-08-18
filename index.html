@@ -1327,6 +1327,16 @@
                 window.renderFirebaseComments(data);
             }
         });
+
+        // Escuchar capas GeoJSON/GeoPackage en tiempo real, para que sean visibles
+        // para cualquier persona que abra el enlace, no solo en el navegador del admin
+        window.fbGeoLayersRef = ref(dbFirebase, 'geo_layers');
+        onValue(window.fbGeoLayersRef, (snapshot) => {
+            const data = snapshot.val();
+            if (typeof window.renderFirebaseGeoLayers === 'function') {
+                window.renderFirebaseGeoLayers(data);
+            }
+        });
     </script>
 
     <script>
@@ -1398,9 +1408,7 @@
             ]
         };
 
-        // --- INICIALIZACIÓN DE INDEXEDDB ---
-        let geoLayersLoaded = false; // Evita cargar las capas guardadas más de una vez
-
+        // --- INICIALIZACIÓN DE INDEXEDDB (medios locales del admin y configuraciones) ---
         if ('indexedDB' in window) {
             const request = indexedDB.open("RI20CategorizedGalleryDB", 5);
 
@@ -1414,7 +1422,8 @@
                     db.createObjectStore("settings", { keyPath: "key" });
                 }
                 if (!db.objectStoreNames.contains("geoLayers")) {
-                    // Almacena cada capa GeoJSON/GeoPackage cargada para que persista entre sesiones
+                    // Store legado, ya no se usa (las capas ahora se comparten vía Firebase),
+                    // se mantiene declarado solo para no romper la apertura de la BD existente.
                     db.createObjectStore("geoLayers", { keyPath: "id", autoIncrement: true });
                 }
             };
@@ -1423,7 +1432,6 @@
                 db = e.target.result;
                 cargarVideoPortadaGuardado();
                 cargarFotoMuroGuardada();
-                cargarCapasGuardadas();
             };
 
             request.onerror = function(e) {
@@ -1487,8 +1495,9 @@
                 L.Control.geocoder({ defaultMarkGeocode: true }).addTo(map);
             }
 
-            // Restaura las capas GeoJSON guardadas previamente (si la BD ya estaba lista)
-            cargarCapasGuardadas();
+            // Sincroniza con las capas GeoJSON/GeoPackage ya publicadas en Firebase
+            // (visibles para cualquiera que abra el enlace), en cuanto el mapa está listo
+            if (pendingGeoLayersData !== null) sincronizarCapasGeoJSON(pendingGeoLayersData);
         }
 
         // --- CARGA Y GESTIÓN DE MÚLTIPLES CAPAS GEOJSON / GPKG ---
@@ -1502,6 +1511,10 @@
             if (!files || files.length === 0) return;
 
             if (!map) initMap();
+            if (!window.firebaseDB) {
+                alert('⚠️ Conectando a Firebase... intente en un segundo.');
+                return;
+            }
 
             let countSuccess = 0;
 
@@ -1516,7 +1529,7 @@
                     if (fileExt === 'geojson' || fileExt === 'json') {
                         const text = await file.text();
                         geojsonData = JSON.parse(text);
-                        procesarYAgregarCapa(geojsonData, fileName);
+                        publicarCapaEnFirebase(geojsonData, fileName);
                         countSuccess++;
                     } else if (fileExt === 'gpkg') {
                         if (typeof window.geopackage === 'undefined') {
@@ -1544,7 +1557,7 @@
                                 type: "FeatureCollection",
                                 features: features
                             };
-                            procesarYAgregarCapa(geojsonData, `${fileName} (${table})`);
+                            publicarCapaEnFirebase(geojsonData, `${fileName} (${table})`);
                         }
                         countSuccess++;
                     }
@@ -1554,57 +1567,77 @@
             }
 
             if (countSuccess > 0) {
-                ajustarVistaMapaGlobal();
-                alert(`✅ Se han procesado y añadido las capas seleccionadas al mapa.`);
+                alert(`✅ Se han publicado las capas seleccionadas. Ya son visibles para cualquiera que abra el enlace de la página.`);
             }
             event.target.value = '';
         }
 
-        // Restaura al mapa todas las capas GeoJSON que quedaron guardadas en sesiones anteriores
-        function cargarCapasGuardadas() {
-            if (!db || !map || geoLayersLoaded) return;
-            geoLayersLoaded = true;
-
-            const tx = db.transaction("geoLayers", "readonly");
-            const store = tx.objectStore("geoLayers");
-            const getAllReq = store.getAll();
-
-            getAllReq.onsuccess = function() {
-                const capasGuardadas = getAllReq.result || [];
-                capasGuardadas.forEach(item => {
-                    // El último parámetro (false) evita volver a guardarla: ya existe en la BD
-                    procesarYAgregarCapa(item.geojson, item.nombre, item.color, false);
-                });
-                if (capasGuardadas.length > 0) ajustarVistaMapaGlobal();
-            };
-
-            getAllReq.onerror = function(e) {
-                console.error("Error al restaurar las capas guardadas:", e);
-            };
+        // Publica una capa en Firebase Realtime Database para que sea visible
+        // en tiempo real para todos los visitantes del enlace (no solo en este navegador)
+        function publicarCapaEnFirebase(geojsonData, nombreCapa) {
+            if (!window.firebaseDB) return;
+            const layerColor = getRandomColor();
+            window.fbPush(window.fbGeoLayersRef, {
+                nombre: nombreCapa,
+                color: layerColor,
+                geojson: geojsonData
+            }).catch(err => {
+                console.error("Error al publicar la capa GeoJSON en Firebase:", err);
+                alert('⚠️ Ocurrió un error al publicar la capa. Verifique su conexión e intente de nuevo.');
+            });
         }
 
-        // Elimina permanentemente todas las capas GeoJSON guardadas en la BD y del mapa actual
-        function limpiarCapasGuardadas() {
-            if (!isAdmin || !db) return;
-            if (!confirm('⚠️ ¿Desea eliminar TODAS las capas GeoJSON/GeoPackage guardadas de forma permanente? Esta acción no se puede deshacer.')) return;
+        // Mantiene el mapa sincronizado con las capas guardadas en Firebase: agrega
+        // las nuevas y quita las que hayan sido eliminadas, para cualquier visitante
+        let pendingGeoLayersData = null;
+        let firebaseGeoLayerObjects = {}; // key de Firebase -> capa de Leaflet ya dibujada
 
-            const tx = db.transaction("geoLayers", "readwrite");
-            tx.objectStore("geoLayers").clear();
+        window.renderFirebaseGeoLayers = function(data) {
+            pendingGeoLayersData = data;
+            if (!map || !layerControl) return; // se sincroniza en cuanto el mapa esté listo (initMap)
+            sincronizarCapasGeoJSON(data);
+        };
 
-            tx.oncomplete = function() {
-                loadedLayers.forEach(layer => {
+        function sincronizarCapasGeoJSON(data) {
+            const keys = data ? Object.keys(data) : [];
+
+            // Quita del mapa las capas que ya no existen en Firebase (fueron eliminadas)
+            Object.keys(firebaseGeoLayerObjects).forEach(key => {
+                if (!keys.includes(key)) {
+                    const layer = firebaseGeoLayerObjects[key];
                     map.removeLayer(layer);
                     if (layerControl) layerControl.removeLayer(layer);
-                });
-                loadedLayers = [];
-                alert('✅ Se han eliminado todas las capas guardadas.');
-            };
+                    loadedLayers = loadedLayers.filter(l => l !== layer);
+                    delete firebaseGeoLayerObjects[key];
+                }
+            });
+
+            // Dibuja las capas nuevas que todavía no están en el mapa
+            let seAgregoAlguna = false;
+            keys.forEach(key => {
+                if (firebaseGeoLayerObjects[key]) return;
+                const item = data[key];
+                const layer = dibujarCapaEnMapa(item.geojson, item.nombre, item.color);
+                firebaseGeoLayerObjects[key] = layer;
+                seAgregoAlguna = true;
+            });
+
+            if (seAgregoAlguna) ajustarVistaMapaGlobal();
         }
 
-        function procesarYAgregarCapa(geojsonData, nombreCapa, colorForzado, guardarEnDB) {
-            const layerColor = colorForzado || getRandomColor();
-            const debeGuardar = guardarEnDB !== false; // por defecto true, salvo que se indique lo contrario
+        // Elimina permanentemente todas las capas GeoJSON/GeoPackage publicadas en Firebase
+        function limpiarCapasGuardadas() {
+            if (!isAdmin || !window.firebaseDB) return;
+            if (!confirm('⚠️ ¿Desea eliminar TODAS las capas GeoJSON/GeoPackage publicadas de forma permanente? Esta acción no se puede deshacer y afecta a todos los que vean el enlace.')) return;
 
+            window.fbRemove(window.fbGeoLayersRef).then(() => {
+                alert('✅ Se han eliminado todas las capas publicadas.');
+            }).catch(err => {
+                console.error("Error al eliminar las capas GeoJSON en Firebase:", err);
+            });
+        }
+
+        function dibujarCapaEnMapa(geojsonData, nombreCapa, layerColor) {
             const newVectorLayer = L.geoJSON(geojsonData, {
                 pointToLayer: function(feature, latlng) {
                     return L.circleMarker(latlng, {
@@ -1658,18 +1691,7 @@
 
             loadedLayers.push(newVectorLayer);
 
-            // Persiste la capa en IndexedDB para que se mantenga al recargar o volver a abrir el mapa
-            if (debeGuardar && db) {
-                const tx = db.transaction("geoLayers", "readwrite");
-                tx.objectStore("geoLayers").add({
-                    nombre: nombreCapa,
-                    color: layerColor,
-                    geojson: geojsonData
-                });
-                tx.onerror = function(e) {
-                    console.error("Error al guardar la capa GeoJSON en IndexedDB:", e);
-                };
-            }
+            return newVectorLayer;
         }
 
         function ajustarVistaMapaGlobal() {
