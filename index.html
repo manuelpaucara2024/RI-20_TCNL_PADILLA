@@ -614,6 +614,28 @@
             pointer-events: auto;
         }
 
+        .gallery-item-edit {
+            position: absolute;
+            top: 5px;
+            right: 39px;
+            background: rgba(212, 175, 55, 0.95);
+            color: #1a1a1a;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            z-index: 10;
+            pointer-events: auto;
+        }
+
         .photo-showcase {
             background: var(--card-bg);
             border: 1px solid var(--border-red);
@@ -1094,10 +1116,9 @@
                             <h4>📋 Documentación Básica</h4>
                             <ul>
                                 <li>Cédula de Identidad vigente (Original y fotocopias).</li>
-                                <li>Certificado de Nacimiento computarizado (Original y Fotocopia).</li>
-                                <li>Tener entre 18 y 22 años cumplidos al momento de la presentación, se permite la incorporación de varones de 17 años con salvaguardfo, quienes deberan cumplir 18 años hasta el 16 de julio 2027.</li>
-                                <li>Examen grupo sanguineo.</li>
-				<li>Fotocopia del contrato de apertura de cuenta de caja de ahorro en Banco Unión.</li>
+                                <li>Certificado de Nacimiento computable (Original).</li>
+                                <li>Tener entre 18 y 22 años cumplidos al momento de la presentación.</li>
+                                <li>Matrícula de inscripción o Libreta Escolar (si corresponde).</li>
                             </ul>
                         </div>
                     </div>
@@ -1144,11 +1165,11 @@
         </section>
     </div>
 
-    <!-- MODAL 1: VISOR DE INCIDENTES E INCENDIOS EN TIEMPO REAL -->
+    <!-- MODAL 1: INCENDIOS EN TIEMPO REAL -->
     <div id="fire-modal" class="modal-overlay modal-fullscreen">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>🔥 VISOR DE INCIDENTES Y MONITOREO DE INCENDIOS EN TIEMPO REAL - TARIJA</h2>
+                <h2>🔥 MONITOREO DE INCENDIOS EN TIEMPO REAL - TARIJA</h2>
                 <button class="modal-close" onclick="closeModal('fire-modal')">&times;</button>
             </div>
             <div class="modal-body">
@@ -1830,6 +1851,7 @@
             };
 
             const deleteBtnHtml = (deletable && isAdmin) ? `<button class="gallery-item-delete" onclick="event.stopPropagation(); deleteMedia(${item.id})">&times;</button>` : '';
+            const editBtnHtml = (deletable && isAdmin) ? `<button class="gallery-item-edit" onclick="event.stopPropagation(); editarDescripcionMedia(${item.id})">✎</button>` : '';
             const mediaElement = item.type === 'image'
                 ? `<img src="${item.data}" loading="lazy">`
                 : `<video src="${item.data}" preload="metadata"></video>`;
@@ -1838,6 +1860,7 @@
                 <div class="gallery-item-media">${mediaElement}</div>
                 <div class="gallery-item-caption">${item.description || item.name}</div>
                 ${deleteBtnHtml}
+                ${editBtnHtml}
             `;
             grid.appendChild(div);
         }
@@ -1896,6 +1919,27 @@
             const tx = db.transaction("media", "readwrite");
             tx.objectStore("media").delete(id);
             tx.oncomplete = () => loadGallery();
+        }
+
+        function editarDescripcionMedia(id) {
+            if (!isAdmin || !db) return;
+
+            const tx = db.transaction("media", "readonly");
+            const getReq = tx.objectStore("media").get(id);
+
+            getReq.onsuccess = function() {
+                const item = getReq.result;
+                if (!item) return;
+
+                const nuevaDescripcion = prompt('Editar descripción:', item.description || item.name || '');
+                if (nuevaDescripcion === null) return; // canceló la edición
+
+                item.description = nuevaDescripcion.trim();
+
+                const txWrite = db.transaction("media", "readwrite");
+                txWrite.objectStore("media").put(item);
+                txWrite.oncomplete = () => loadGallery();
+            };
         }
 
         // --- MURO DEL RECUERDO CON FIREBASE EN TIEMPO REAL ---
