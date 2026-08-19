@@ -596,24 +596,23 @@
             position: absolute;
             top: 5px;
             right: 5px;
-            background: rgba(218, 41, 28, 0.85);
+            background: rgba(218, 41, 28, 0.9);
             color: white;
-            border: none;
+            border: 2px solid #fff;
             border-radius: 50%;
-            width: 26px;
-            height: 26px;
+            width: 28px;
+            height: 28px;
             cursor: pointer;
             font-weight: bold;
+            font-size: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            opacity: 0;
-            transition: opacity 0.2s;
+            opacity: 1;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
             z-index: 10;
             pointer-events: auto;
         }
-
-        .gallery-item:hover .gallery-item-delete { opacity: 1; }
 
         .photo-showcase {
             background: var(--card-bg);
@@ -1082,7 +1081,7 @@
             </div>
             
             <div class="photo-container">
-                <video id="video-reclutamiento" src="https://res.cloudinary.com/ty33bikf/video/upload/v1787068070/RECLUTAMIENTO.mp4" controls autoplay loop poster="images/fondo_formacion.png">
+                <video id="video-reclutamiento" src="https://res.cloudinary.com/ty33bikf/video/upload/v1787068070/RECLUTAMIENTO.mp4" controls autoplay poster="images/fondo_formacion.png">
                     Tu navegador no soporta el reproductor de video.
                 </video>
             </div>
@@ -1095,9 +1094,10 @@
                             <h4>📋 Documentación Básica</h4>
                             <ul>
                                 <li>Cédula de Identidad vigente (Original y fotocopias).</li>
-                                <li>Certificado de Nacimiento computable (Original).</li>
-                                <li>Tener entre 18 y 22 años cumplidos al momento de la presentación.</li>
-                                <li>Matrícula de inscripción o Libreta Escolar (si corresponde).</li>
+                                <li>Certificado de Nacimiento computarizado (Original y Fotocopia).</li>
+                                <li>Tener entre 18 y 22 años cumplidos al momento de la presentación, se permite la incorporación de varones de 17 años con salvaguardfo, quienes deberan cumplir 18 años hasta el 16 de julio 2027.</li>
+                                <li>Examen grupo sanguineo.</li>
+				<li>Fotocopia del contrato de apertura de cuenta de caja de ahorro en Banco Unión.</li>
                             </ul>
                         </div>
                     </div>
@@ -1144,11 +1144,11 @@
         </section>
     </div>
 
-    <!-- MODAL 1: INCENDIOS EN TIEMPO REAL -->
+    <!-- MODAL 1: VISOR DE INCIDENTES E INCENDIOS EN TIEMPO REAL -->
     <div id="fire-modal" class="modal-overlay modal-fullscreen">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>🔥 MONITOREO DE INCENDIOS EN TIEMPO REAL - TARIJA</h2>
+                <h2>🔥 VISOR DE INCIDENTES Y MONITOREO DE INCENDIOS EN TIEMPO REAL - TARIJA</h2>
                 <button class="modal-close" onclick="closeModal('fire-modal')">&times;</button>
             </div>
             <div class="modal-body">
@@ -1489,7 +1489,7 @@
             };
 
             // Se habilita la leyenda desplegada para ver siempre la lista de capas cargadas
-            layerControl = L.control.layers(baseMaps, {}, { collapsed: false }).addTo(map);
+            layerControl = L.control.layers(baseMaps, {}, { collapsed: true }).addTo(map);
 
             if (typeof L.Control.geocoder !== 'undefined') {
                 L.Control.geocoder({ defaultMarkGeocode: true }).addTo(map);
