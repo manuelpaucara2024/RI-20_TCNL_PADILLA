@@ -1317,7 +1317,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js";
-        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
+        import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAwUwye59aAJtiZHbPCuMHpBAATY_CH9fk",
@@ -1340,6 +1340,7 @@
         window.fbPush = push;
         window.fbOnValue = onValue;
         window.fbRemove = remove;
+        window.fbUpdate = update;
 
         // Escuchar comentarios en tiempo real desde Firebase Database
         const commentsRef = ref(dbFirebase, 'muro_comments');
@@ -1357,6 +1358,16 @@
             const data = snapshot.val();
             if (typeof window.renderFirebaseGeoLayers === 'function') {
                 window.renderFirebaseGeoLayers(data);
+            }
+        });
+
+        // Escuchar fotos/videos subidos por el admin (archivo o URL) en las galerías,
+        // para que sean visibles para cualquiera que abra el enlace, en cualquier categoría
+        window.fbGalleryMediaRef = ref(dbFirebase, 'gallery_media');
+        onValue(window.fbGalleryMediaRef, (snapshot) => {
+            const data = snapshot.val();
+            if (typeof window.renderFirebaseGalleryMedia === 'function') {
+                window.renderFirebaseGalleryMedia(data);
             }
         });
     </script>
@@ -1784,9 +1795,13 @@
         }
 
         function handleFileUpload(event) {
-            if (!isAdmin || !db) return;
+            if (!isAdmin) return;
             const files = event.target.files;
             if (!files.length) return;
+            if (!window.firebaseDB) {
+                alert('⚠️ Conectando a Firebase... intente en un segundo.');
+                return;
+            }
 
             const descInput = document.getElementById('media-description');
             const descriptionText = descInput ? descInput.value.trim() : '';
@@ -1795,7 +1810,6 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const mediaItem = {
-                        category: currentCategory,
                         name: file.name,
                         description: descriptionText || file.name,
                         type: file.type.startsWith('video') ? 'video' : 'image',
@@ -1803,9 +1817,11 @@
                         date: new Date().toLocaleDateString()
                     };
 
-                    const tx = db.transaction("media", "readwrite");
-                    tx.objectStore("media").add(mediaItem);
-                    tx.oncomplete = () => loadGallery();
+                    const catRef = window.fbRef(window.firebaseDB, `gallery_media/${currentCategory}`);
+                    window.fbPush(catRef, mediaItem).catch(err => {
+                        console.error("Error al publicar la foto/video en Firebase:", err);
+                        alert('⚠️ Ocurrió un error al publicar el archivo. Verifique su conexión e intente de nuevo.');
+                    });
                 };
                 reader.readAsDataURL(file);
             });
@@ -1813,7 +1829,11 @@
         }
 
         function handleUrlUpload() {
-            if (!isAdmin || !db) return;
+            if (!isAdmin) return;
+            if (!window.firebaseDB) {
+                alert('⚠️ Conectando a Firebase... intente en un segundo.');
+                return;
+            }
             const urlInput = document.getElementById('media-url-input');
             const descInput = document.getElementById('media-description');
             const url = urlInput ? urlInput.value.trim() : '';
@@ -1826,7 +1846,6 @@
             const descriptionText = descInput ? descInput.value.trim() : '';
 
             const mediaItem = {
-                category: currentCategory,
                 name: url.split('/').pop(),
                 description: descriptionText || url.split('/').pop(),
                 type: isVideo ? 'video' : 'image',
@@ -1834,13 +1853,14 @@
                 date: new Date().toLocaleDateString()
             };
 
-            const tx = db.transaction("media", "readwrite");
-            tx.objectStore("media").add(mediaItem);
-            tx.oncomplete = () => {
-                loadGallery();
+            const catRef = window.fbRef(window.firebaseDB, `gallery_media/${currentCategory}`);
+            window.fbPush(catRef, mediaItem).then(() => {
                 if (urlInput) urlInput.value = '';
                 if (descInput) descInput.value = '';
-            };
+            }).catch(err => {
+                console.error("Error al publicar la foto/video en Firebase:", err);
+                alert('⚠️ Ocurrió un error al publicar el archivo. Verifique su conexión e intente de nuevo.');
+            });
         }
 
         function renderGalleryItem(grid, item, deletable) {
@@ -1851,8 +1871,8 @@
                 showLightbox(item.data, item.type);
             };
 
-            const deleteBtnHtml = (deletable && isAdmin) ? `<button class="gallery-item-delete" onclick="event.stopPropagation(); deleteMedia(${item.id})">&times;</button>` : '';
-            const editBtnHtml = (deletable && isAdmin) ? `<button class="gallery-item-edit" onclick="event.stopPropagation(); editarDescripcionMedia(${item.id})">✎</button>` : '';
+            const deleteBtnHtml = (deletable && isAdmin) ? `<button class="gallery-item-delete" onclick="event.stopPropagation(); deleteMedia('${item.id}')">&times;</button>` : '';
+            const editBtnHtml = (deletable && isAdmin) ? `<button class="gallery-item-edit" onclick="event.stopPropagation(); editarDescripcionMedia('${item.id}')">✎</button>` : '';
             const mediaElement = item.type === 'image'
                 ? `<img src="${item.data}" loading="lazy">`
                 : `<video src="${item.data}" preload="metadata"></video>`;
@@ -1866,6 +1886,17 @@
             grid.appendChild(div);
         }
 
+        // Guarda la última instantánea de medios de galería recibida desde Firebase
+        let firebaseGalleryData = {};
+
+        window.renderFirebaseGalleryMedia = function(data) {
+            firebaseGalleryData = data || {};
+            // Si la galería de la categoría actual está abierta, refresca la vista
+            if (document.getElementById('gallery-modal') && document.getElementById('gallery-modal').classList.contains('active')) {
+                loadGallery();
+            }
+        };
+
         function loadGallery() {
             const grid = document.getElementById('gallery-grid');
             if (!grid) return;
@@ -1878,29 +1909,19 @@
                 renderGalleryItem(grid, item, false);
             });
 
-            // 2. Medios agregados por el administrador (archivo o URL), guardados en IndexedDB
-            if (!db) {
-                if (count === 0) {
-                    grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:#d5c8a3; padding: 20px;">No hay archivos cargados en "${currentCategory}".</div>`;
-                }
-                return;
+            // 2. Medios agregados por el administrador (archivo o URL), guardados en Firebase
+            // y visibles para cualquiera que abra el enlace
+            const itemsCategoria = firebaseGalleryData[currentCategory] || {};
+            Object.keys(itemsCategoria).forEach(key => {
+                count++;
+                const item = itemsCategoria[key];
+                item.id = key;
+                renderGalleryItem(grid, item, true);
+            });
+
+            if (count === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:#d5c8a3; padding: 20px;">No hay archivos cargados en "${currentCategory}".</div>`;
             }
-
-            const tx = db.transaction("media", "readonly");
-            const store = tx.objectStore("media");
-            const index = store.index("category");
-            const req = index.openCursor(IDBKeyRange.only(currentCategory));
-
-            req.onsuccess = function(e) {
-                const cursor = e.target.result;
-                if (cursor) {
-                    count++;
-                    renderGalleryItem(grid, cursor.value, true);
-                    cursor.continue();
-                } else if (count === 0) {
-                    grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:#d5c8a3; padding: 20px;">No hay archivos cargados en "${currentCategory}".</div>`;
-                }
-            };
         }
 
         function showLightbox(src, type) {
@@ -1916,31 +1937,26 @@
         }
 
         function deleteMedia(id) {
-            if (!isAdmin || !db) return;
-            const tx = db.transaction("media", "readwrite");
-            tx.objectStore("media").delete(id);
-            tx.oncomplete = () => loadGallery();
+            if (!isAdmin || !window.firebaseDB) return;
+            const itemRef = window.fbRef(window.firebaseDB, `gallery_media/${currentCategory}/${id}`);
+            window.fbRemove(itemRef).catch(err => {
+                console.error("Error al eliminar la foto/video en Firebase:", err);
+            });
         }
 
         function editarDescripcionMedia(id) {
-            if (!isAdmin || !db) return;
+            if (!isAdmin || !window.firebaseDB) return;
 
-            const tx = db.transaction("media", "readonly");
-            const getReq = tx.objectStore("media").get(id);
+            const itemActual = (firebaseGalleryData[currentCategory] || {})[id];
+            const descripcionActual = itemActual ? (itemActual.description || itemActual.name || '') : '';
 
-            getReq.onsuccess = function() {
-                const item = getReq.result;
-                if (!item) return;
+            const nuevaDescripcion = prompt('Editar descripción:', descripcionActual);
+            if (nuevaDescripcion === null) return; // canceló la edición
 
-                const nuevaDescripcion = prompt('Editar descripción:', item.description || item.name || '');
-                if (nuevaDescripcion === null) return; // canceló la edición
-
-                item.description = nuevaDescripcion.trim();
-
-                const txWrite = db.transaction("media", "readwrite");
-                txWrite.objectStore("media").put(item);
-                txWrite.oncomplete = () => loadGallery();
-            };
+            const itemRef = window.fbRef(window.firebaseDB, `gallery_media/${currentCategory}/${id}`);
+            window.fbUpdate(itemRef, { description: nuevaDescripcion.trim() }).catch(err => {
+                console.error("Error al actualizar la descripción en Firebase:", err);
+            });
         }
 
         // --- MURO DEL RECUERDO CON FIREBASE EN TIEMPO REAL ---
