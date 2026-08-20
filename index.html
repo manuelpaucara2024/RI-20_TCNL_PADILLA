@@ -1084,12 +1084,12 @@
                     <svg viewBox="0 0 24 24">
                         <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                     </svg>
-                    ACCIÓN CIVICA
+                    ACCIÓN CÍVICA
                 </button>
 
                 <button class="btn-action btn-admin" onclick="openAdminPanel()">
                     <svg viewBox="0 0 24 24">
-                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
                     </svg>
                     PANEL DE CONTROL
                 </button>
@@ -1351,8 +1351,7 @@
             }
         });
 
-        // Escuchar capas GeoJSON/GeoPackage en tiempo real, para que sean visibles
-        // para cualquier persona que abra el enlace, no solo en el navegador del admin
+        // Escuchar capas GeoJSON/GeoPackage en tiempo real
         window.fbGeoLayersRef = ref(dbFirebase, 'geo_layers');
         onValue(window.fbGeoLayersRef, (snapshot) => {
             const data = snapshot.val();
@@ -1361,8 +1360,7 @@
             }
         });
 
-        // Escuchar fotos/videos subidos por el admin (archivo o URL) en las galerías,
-        // para que sean visibles para cualquiera que abra el enlace, en cualquier categoría
+        // Escuchar fotos/videos subidos por el admin en las galerías
         window.fbGalleryMediaRef = ref(dbFirebase, 'gallery_media');
         onValue(window.fbGalleryMediaRef, (snapshot) => {
             const data = snapshot.val();
@@ -1381,67 +1379,71 @@
         let db = null;
 
         // --- MEDIOS INSTITUCIONALES ALOJADOS EN LA NUBE (CLOUDINARY) ---
-        // Estos elementos se muestran a TODOS los visitantes por defecto, sin depender
-        // del almacenamiento local de cada navegador. El panel de administrador puede
-        // seguir agregando más fotos/videos (por archivo o por URL) encima de estos.
         const CLOUD_BASE = 'https://res.cloudinary.com/ty33bikf';
         const DEFAULT_MURO_PHOTO = `${CLOUD_BASE}/image/upload/v1787067702/CAT._2009.jpg`;
         const DEFAULT_COVER_VIDEO = `${CLOUD_BASE}/video/upload/v1787068070/RECLUTAMIENTO.mp4`;
 
         const DEFAULT_MEDIA = {
             'APOYO A DESASTRES NATURALES': [
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067679/WhatsApp_Image_2026-08-15_at_9.33.59_PM.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067679/WhatsApp_Image_2026-08-15_at_9.33.56_PM.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067679/WhatsApp_Image_2026-08-15_at_9.33.55_PM_1.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067679/8.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067679/9.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067678/7.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067678/6.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067678/3.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067677/5.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067677/4.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067677/2.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067676/1.jpg` },
-                { type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787068045/VID-20260722-WA0094.mp4` },
-                { type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787068041/WhatsApp_Video_2026-08-17_at_11.04.01_AM.mp4` },
-                { type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787068027/WhatsApp_Video_2026-07-22_at_2.25.35_PM.mp4` },
-                { type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787068004/WhatsApp_Video_2026-08-17_at_11.04.02_AM_1.mp4` },
-                { type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787067983/VID-20260722-WA0065_1.mp4` },
-                { type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787067959/VID-20260722-WA0063.mp4` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067725/WhatsApp_Image_2026-08-17_at_11.16.45_PM_2.jpg` },
-                { type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067725/WhatsApp_Image_2026-08-17_at_11.16.44_PM_1.jpg` }
+                { id: 'def_adn_1', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067679/WhatsApp_Image_2026-08-15_at_9.33.59_PM.jpg` },
+                { id: 'def_adn_2', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067679/WhatsApp_Image_2026-08-15_at_9.33.56_PM.jpg` },
+                { id: 'def_adn_3', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067679/WhatsApp_Image_2026-08-15_at_9.33.55_PM_1.jpg` },
+                { id: 'def_adn_4', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067679/8.jpg` },
+                { id: 'def_adn_5', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067679/9.jpg` },
+                { id: 'def_adn_6', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067678/7.jpg` },
+                { id: 'def_adn_7', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067678/6.jpg` },
+                { id: 'def_adn_8', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067678/3.jpg` },
+                { id: 'def_adn_9', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067677/5.jpg` },
+                { id: 'def_adn_10', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067677/4.jpg` },
+                { id: 'def_adn_11', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067677/2.jpg` },
+                { id: 'def_adn_12', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067676/1.jpg` },
+                { id: 'def_adn_13', type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787068045/VID-20260722-WA0094.mp4` },
+                { id: 'def_adn_14', type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787068041/WhatsApp_Video_2026-08-17_at_11.04.01_AM.mp4` },
+                { id: 'def_adn_15', type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787068027/WhatsApp_Video_2026-07-22_at_2.25.35_PM.mp4` },
+                { id: 'def_adn_16', type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787068004/WhatsApp_Video_2026-08-17_at_11.04.02_AM_1.mp4` },
+                { id: 'def_adn_17', type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787067983/VID-20260722-WA0065_1.mp4` },
+                { id: 'def_adn_18', type: 'video', description: 'Apoyo a desastres naturales - Video', data: `${CLOUD_BASE}/video/upload/v1787067959/VID-20260722-WA0063.mp4` },
+                { id: 'def_adn_19', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067725/WhatsApp_Image_2026-08-17_at_11.16.45_PM_2.jpg` },
+                { id: 'def_adn_20', type: 'image', description: 'Apoyo a desastres naturales', data: `${CLOUD_BASE}/image/upload/v1787067725/WhatsApp_Image_2026-08-17_at_11.16.44_PM_1.jpg` }
             ],
             'ACTIVIDADES GENERALES': [
-                { type: 'image', description: 'Actividades generales', data: `${CLOUD_BASE}/image/upload/v1787067725/WhatsApp_Image_2026-08-17_at_11.09.28_PM_2.jpg` },
-                { type: 'image', description: 'Actividades generales', data: `${CLOUD_BASE}/image/upload/v1787067714/WhatsApp_Image_2026-08-15_at_9.34.05_PM.jpg` },
-                { type: 'image', description: 'Actividades generales', data: `${CLOUD_BASE}/image/upload/v1787067713/WhatsApp_Image_2026-08-15_at_2.51.51_PM.jpg` },
-                { type: 'image', description: 'Acción Cívica', data: `${CLOUD_BASE}/image/upload/v1787067565/WhatsApp_Image_2026-08-17_at_11.09.27_PM.jpg` }
+                { id: 'def_ag_1', type: 'image', description: 'Actividades generales', data: `${CLOUD_BASE}/image/upload/v1787067725/WhatsApp_Image_2026-08-17_at_11.09.28_PM_2.jpg` },
+                { id: 'def_ag_2', type: 'image', description: 'Actividades generales', data: `${CLOUD_BASE}/image/upload/v1787067714/WhatsApp_Image_2026-08-15_at_9.34.05_PM.jpg` },
+                { id: 'def_ag_3', type: 'image', description: 'Actividades generales', data: `${CLOUD_BASE}/image/upload/v1787067713/WhatsApp_Image_2026-08-15_at_2.51.51_PM.jpg` },
+                { id: 'def_ag_4', type: 'image', description: 'Acción Cívica', data: `${CLOUD_BASE}/image/upload/v1787067565/WhatsApp_Image_2026-08-17_at_11.09.27_PM.jpg` }
             ],
             'III OPERACIONES': [
-                { type: 'image', description: 'Revista', data: `${CLOUD_BASE}/image/upload/v1787067658/REVISTA.jpg` },
-                { type: 'image', description: 'Revista de Soldados', data: `${CLOUD_BASE}/image/upload/v1787067658/REVISTA_DE_SOLDADOS.jpg` },
-                { type: 'image', description: 'Revista de Premilitares', data: `${CLOUD_BASE}/image/upload/v1787067657/REVISTA_DE_PREMILITARES.jpg` },
-                { type: 'image', description: 'Patrullajes', data: `${CLOUD_BASE}/image/upload/v1787067657/PATRULLAJES.jpg` },
-                { type: 'image', description: 'Operaciones de patrullaje en coordinación con la Policía', data: `${CLOUD_BASE}/image/upload/v1787067657/OPERCIONES_DE_PATRULLAJE_EN_CORRDINACION_CON_LA_POLICIA.jpg` },
-                { type: 'image', description: 'Juegos de Infantería', data: `${CLOUD_BASE}/image/upload/v1787067657/JUEGOS_DE_INFANTERIA.jpg` },
-                { type: 'image', description: 'Operación de Búsqueda y Rescate en Uriondo', data: `${CLOUD_BASE}/image/upload/v1787067657/OPERACI%C3%93N_DE_BUSQUEDA_Y_RESCATE_EN_URIONDO.jpg` },
-                { type: 'image', description: 'Operaciones de Patrullaje', data: `${CLOUD_BASE}/image/upload/v1787067657/OPERACIONES_DE_PATRULLAJE.jpg` },
-                { type: 'image', description: 'Instrucción de Premilitares en el Terreno', data: `${CLOUD_BASE}/image/upload/v1787067656/INSTRUCCI%C3%93N_DE_PREMILITARES_EN_EL_TERRENO.jpg` },
-                { type: 'image', description: 'Instrucción', data: `${CLOUD_BASE}/image/upload/v1787067657/INSTRUCCI%C3%93N.jpg` },
-                { type: 'image', description: 'Examen Intelectual', data: `${CLOUD_BASE}/image/upload/v1787067656/EXAMEN_INTELECTUAL.jpg` },
-                { type: 'image', description: 'Examen Físico', data: `${CLOUD_BASE}/image/upload/v1787067656/EXAMEN_FISICO.jpg` },
-                { type: 'image', description: 'Entrenamiento Físico Militar', data: `${CLOUD_BASE}/image/upload/v1787067656/ENTRENAMIENTO_FISICO_MILITAR.jpg` },
-                { type: 'image', description: 'Evaluación de la materia de COS', data: `${CLOUD_BASE}/image/upload/v1787067656/EVALUACION_DE_LA_MATERIA_DE_COS.jpg` },
-                { type: 'image', description: 'Evaluación Estadio IV Centenario', data: `${CLOUD_BASE}/image/upload/v1787067656/EVALUACION_ESTADIO_IV_CENTENARIO.jpg` },
-                { type: 'image', description: 'Búsqueda y Rescate Río Camacho', data: `${CLOUD_BASE}/image/upload/v1787067655/BUSQUEDA_Y_RESCATE_RIO_CAMACHO.jpg` },
-                { type: 'image', description: 'Desfile de Teas', data: `${CLOUD_BASE}/image/upload/v1787067656/DESFILE_DE_TEAS.jpg` },
-                { type: 'image', description: 'Cruce de Obstáculos', data: `${CLOUD_BASE}/image/upload/v1787067655/CRUCE_DE_OBSTACULOS.jpg` },
-                { type: 'image', description: 'Búsqueda y Rescate del Sr. Arnol Gutiérrez', data: `${CLOUD_BASE}/image/upload/v1787067655/B%C3%9ASQUEDA_Y_RESCATE_DEL_SR._ARNOL_GUTI%C3%89RREZ.jpg` },
-                { type: 'image', description: '1er Lugar Día de la Infantería', data: `${CLOUD_BASE}/image/upload/v1787067655/1ER_LUGAR_DIA_DE_LA_INFANTERIA.jpg` }
+                { id: 'def_op_1', type: 'image', description: 'Revista', data: `${CLOUD_BASE}/image/upload/v1787067658/REVISTA.jpg` },
+                { id: 'def_op_2', type: 'image', description: 'Revista de Soldados', data: `${CLOUD_BASE}/image/upload/v1787067658/REVISTA_DE_SOLDADOS.jpg` },
+                { id: 'def_op_3', type: 'image', description: 'Revista de Premilitares', data: `${CLOUD_BASE}/image/upload/v1787067657/REVISTA_DE_PREMILITARES.jpg` },
+                { id: 'def_op_4', type: 'image', description: 'Patrullajes', data: `${CLOUD_BASE}/image/upload/v1787067657/PATRULLAJES.jpg` },
+                { id: 'def_op_5', type: 'image', description: 'Operaciones de patrullaje en coordinación con la Policía', data: `${CLOUD_BASE}/image/upload/v1787067657/OPERCIONES_DE_PATRULLAJE_EN_CORRDINACION_CON_LA_POLICIA.jpg` },
+                { id: 'def_op_6', type: 'image', description: 'Juegos de Infantería', data: `${CLOUD_BASE}/image/upload/v1787067657/JUEGOS_DE_INFANTERIA.jpg` },
+                { id: 'def_op_7', type: 'image', description: 'Operación de Búsqueda y Rescate en Uriondo', data: `${CLOUD_BASE}/image/upload/v1787067657/OPERACI%C3%93N_DE_BUSQUEDA_Y_RESCATE_EN_URIONDO.jpg` },
+                { id: 'def_op_8', type: 'image', description: 'Operaciones de Patrullaje', data: `${CLOUD_BASE}/image/upload/v1787067657/OPERACIONES_DE_PATRULLAJE.jpg` },
+                { id: 'def_op_9', type: 'image', description: 'Instrucción de Premilitares en el Terreno', data: `${CLOUD_BASE}/image/upload/v1787067656/INSTRUCCI%C3%93N_DE_PREMILITARES_EN_EL_TERRENO.jpg` },
+                { id: 'def_op_10', type: 'image', description: 'Instrucción', data: `${CLOUD_BASE}/image/upload/v1787067657/INSTRUCCI%C3%93N.jpg` },
+                { id: 'def_op_11', type: 'image', description: 'Examen Intelectual', data: `${CLOUD_BASE}/image/upload/v1787067656/EXAMEN_INTELECTUAL.jpg` },
+                { id: 'def_op_12', type: 'image', description: 'Examen Físico', data: `${CLOUD_BASE}/image/upload/v1787067656/EXAMEN_FISICO.jpg` },
+                { id: 'def_op_13', type: 'image', description: 'Entrenamiento Físico Militar', data: `${CLOUD_BASE}/image/upload/v1787067656/ENTRENAMIENTO_FISICO_MILITAR.jpg` },
+                { id: 'def_op_14', type: 'image', description: 'Evaluación de la materia de COS', data: `${CLOUD_BASE}/image/upload/v1787067656/EVALUACION_DE_LA_MATERIA_DE_COS.jpg` },
+                { id: 'def_op_15', type: 'image', description: 'Evaluación Estadio IV Centenario', data: `${CLOUD_BASE}/image/upload/v1787067656/EVALUACION_ESTADIO_IV_CENTENARIO.jpg` },
+                { id: 'def_op_16', type: 'image', description: 'Búsqueda y Rescate Río Camacho', data: `${CLOUD_BASE}/image/upload/v1787067655/BUSQUEDA_Y_RESCATE_RIO_CAMACHO.jpg` },
+                { id: 'def_op_17', type: 'image', description: 'Desfile de Teas', data: `${CLOUD_BASE}/image/upload/v1787067656/DESFILE_DE_TEAS.jpg` },
+                { id: 'def_op_18', type: 'image', description: 'Cruce de Obstáculos', data: `${CLOUD_BASE}/image/upload/v1787067655/CRUCE_DE_OBSTACULOS.jpg` },
+                { id: 'def_op_19', type: 'image', description: 'Búsqueda y Rescate del Sr. Arnol Gutiérrez', data: `${CLOUD_BASE}/image/upload/v1787067655/B%C3%9ASQUEDA_Y_RESCATE_DEL_SR._ARNOL_GUTI%C3%89RREZ.jpg` },
+                { id: 'def_op_20', type: 'image', description: '1er Lugar Día de la Infantería', data: `${CLOUD_BASE}/image/upload/v1787067655/1ER_LUGAR_DIA_DE_LA_INFANTERIA.jpg` }
             ]
         };
 
-        // --- INICIALIZACIÓN DE INDEXEDDB (medios locales del admin y configuraciones) ---
+        // Estructura local para persistir modificaciones/eliminaciones de los elementos por defecto
+        let defaultMediaOverrides = JSON.parse(localStorage.getItem('ri20_default_media_overrides') || '{}');
+
+        function saveDefaultOverrides() {
+            localStorage.setItem('ri20_default_media_overrides', JSON.stringify(defaultMediaOverrides));
+        }
+
+        // --- INICIALIZACIÓN DE INDEXEDDB ---
         if ('indexedDB' in window) {
             const request = indexedDB.open("RI20CategorizedGalleryDB", 5);
 
@@ -1455,8 +1457,6 @@
                     db.createObjectStore("settings", { keyPath: "key" });
                 }
                 if (!db.objectStoreNames.contains("geoLayers")) {
-                    // Store legado, ya no se usa (las capas ahora se comparten vía Firebase),
-                    // se mantiene declarado solo para no romper la apertura de la BD existente.
                     db.createObjectStore("geoLayers", { keyPath: "id", autoIncrement: true });
                 }
             };
@@ -1521,15 +1521,12 @@
                 "Satélite Esri": esriSat
             };
 
-            // Se habilita la leyenda desplegada para ver siempre la lista de capas cargadas
             layerControl = L.control.layers(baseMaps, {}, { collapsed: true }).addTo(map);
 
             if (typeof L.Control.geocoder !== 'undefined') {
                 L.Control.geocoder({ defaultMarkGeocode: true }).addTo(map);
             }
 
-            // Sincroniza con las capas GeoJSON/GeoPackage ya publicadas en Firebase
-            // (visibles para cualquiera que abra el enlace), en cuanto el mapa está listo
             if (pendingGeoLayersData !== null) sincronizarCapasGeoJSON(pendingGeoLayersData);
         }
 
@@ -1605,8 +1602,6 @@
             event.target.value = '';
         }
 
-        // Publica una capa en Firebase Realtime Database para que sea visible
-        // en tiempo real para todos los visitantes del enlace (no solo en este navegador)
         function publicarCapaEnFirebase(geojsonData, nombreCapa) {
             if (!window.firebaseDB) return;
             const layerColor = getRandomColor();
@@ -1620,21 +1615,18 @@
             });
         }
 
-        // Mantiene el mapa sincronizado con las capas guardadas en Firebase: agrega
-        // las nuevas y quita las que hayan sido eliminadas, para cualquier visitante
         let pendingGeoLayersData = null;
-        let firebaseGeoLayerObjects = {}; // key de Firebase -> capa de Leaflet ya dibujada
+        let firebaseGeoLayerObjects = {};
 
         window.renderFirebaseGeoLayers = function(data) {
             pendingGeoLayersData = data;
-            if (!map || !layerControl) return; // se sincroniza en cuanto el mapa esté listo (initMap)
+            if (!map || !layerControl) return;
             sincronizarCapasGeoJSON(data);
         };
 
         function sincronizarCapasGeoJSON(data) {
             const keys = data ? Object.keys(data) : [];
 
-            // Quita del mapa las capas que ya no existen en Firebase (fueron eliminadas)
             Object.keys(firebaseGeoLayerObjects).forEach(key => {
                 if (!keys.includes(key)) {
                     const layer = firebaseGeoLayerObjects[key];
@@ -1645,7 +1637,6 @@
                 }
             });
 
-            // Dibuja las capas nuevas que todavía no están en el mapa
             let seAgregoAlguna = false;
             keys.forEach(key => {
                 if (firebaseGeoLayerObjects[key]) return;
@@ -1658,7 +1649,6 @@
             if (seAgregoAlguna) ajustarVistaMapaGlobal();
         }
 
-        // Elimina permanentemente todas las capas GeoJSON/GeoPackage publicadas en Firebase
         function limpiarCapasGuardadas() {
             if (!isAdmin || !window.firebaseDB) return;
             if (!confirm('⚠️ ¿Desea eliminar TODAS las capas GeoJSON/GeoPackage publicadas de forma permanente? Esta acción no se puede deshacer y afecta a todos los que vean el enlace.')) return;
@@ -1684,12 +1674,12 @@
                 },
                 style: function(feature) {
                     return {
-                        color: layerColor,   // Color del borde exterior
-                        weight: 3,           // Grosor de la línea
-                        opacity: 1,          // Visibilidad del contorno
-                        fill: true,          // Activa el relleno del polígono
+                        color: layerColor,
+                        weight: 3,
+                        opacity: 1,
+                        fill: true,
                         fillColor: layerColor,
-                        fillOpacity: 0.12    // Relleno muy suave, casi imperceptible, pero clicable para ver atributos
+                        fillOpacity: 0.12
                     };
                 },
                 onEachFeature: function(feature, layer) {
@@ -1702,8 +1692,6 @@
                         layer.bindPopup(popupContent);
                     }
 
-                    // Resalta suavemente el polígono al pasar el mouse, para facilitar
-                    // identificar sus límites sin perder la transparencia base
                     if (feature.geometry && (feature.geometry.type === 'Polygon' || feature.geometry.type === 'MultiPolygon')) {
                         layer.on('mouseover', function() {
                             layer.setStyle({ fillOpacity: 0.35, weight: 4 });
@@ -1715,7 +1703,6 @@
                 }
             }).addTo(map);
 
-            // Muestra de color dentro del texto de la leyenda
             const legendLabel = `<span style="display:inline-block; width:12px; height:12px; background-color:${layerColor}; border:1px solid #fff; border-radius:2px; margin-right:4px;"></span> ${nombreCapa}`;
 
             if (layerControl) {
@@ -1871,8 +1858,8 @@
                 showLightbox(item.data, item.type);
             };
 
-            const deleteBtnHtml = (deletable && isAdmin) ? `<button class="gallery-item-delete" onclick="event.stopPropagation(); deleteMedia('${item.id}')">&times;</button>` : '';
-            const editBtnHtml = (deletable && isAdmin) ? `<button class="gallery-item-edit" onclick="event.stopPropagation(); editarDescripcionMedia('${item.id}')">✎</button>` : '';
+            const deleteBtnHtml = (deletable && isAdmin) ? `<button class="gallery-item-delete" onclick="event.stopPropagation(); deleteMedia('${item.id}', ${item.isDefault || false})">&times;</button>` : '';
+            const editBtnHtml = (deletable && isAdmin) ? `<button class="gallery-item-edit" onclick="event.stopPropagation(); editarDescripcionMedia('${item.id}', ${item.isDefault || false})">✎</button>` : '';
             const mediaElement = item.type === 'image'
                 ? `<img src="${item.data}" loading="lazy">`
                 : `<video src="${item.data}" preload="metadata"></video>`;
@@ -1886,12 +1873,10 @@
             grid.appendChild(div);
         }
 
-        // Guarda la última instantánea de medios de galería recibida desde Firebase
         let firebaseGalleryData = {};
 
         window.renderFirebaseGalleryMedia = function(data) {
             firebaseGalleryData = data || {};
-            // Si la galería de la categoría actual está abierta, refresca la vista
             if (document.getElementById('gallery-modal') && document.getElementById('gallery-modal').classList.contains('active')) {
                 loadGallery();
             }
@@ -1903,14 +1888,22 @@
             grid.innerHTML = '';
             let count = 0;
 
-            // 1. Medios institucionales alojados en la nube (visibles para todos los visitantes)
+            // 1. Medios institucionales alojados en la nube (con soporte para ser eliminados o modificados por el Admin)
             (DEFAULT_MEDIA[currentCategory] || []).forEach(item => {
+                const override = defaultMediaOverrides[item.id];
+                if (override && override.deleted) {
+                    return; // Si el admin lo eliminó, se omite
+                }
                 count++;
-                renderGalleryItem(grid, item, false);
+                const itemToRender = {
+                    ...item,
+                    description: (override && override.description !== undefined) ? override.description : item.description,
+                    isDefault: true
+                };
+                renderGalleryItem(grid, itemToRender, true);
             });
 
-            // 2. Medios agregados por el administrador (archivo o URL), guardados en Firebase
-            // y visibles para cualquiera que abra el enlace
+            // 2. Medios agregados por el administrador
             const itemsCategoria = firebaseGalleryData[currentCategory] || {};
             Object.keys(itemsCategoria).forEach(key => {
                 count++;
@@ -1936,23 +1929,50 @@
             openModal('lightbox-modal');
         }
 
-        function deleteMedia(id) {
-            if (!isAdmin || !window.firebaseDB) return;
+        function deleteMedia(id, isDefault) {
+            if (!isAdmin) return;
+            
+            if (isDefault) {
+                if (!confirm('¿Está seguro de que desea eliminar este archivo por defecto?')) return;
+                if (!defaultMediaOverrides[id]) defaultMediaOverrides[id] = {};
+                defaultMediaOverrides[id].deleted = true;
+                saveDefaultOverrides();
+                loadGallery();
+                return;
+            }
+
+            if (!window.firebaseDB) return;
             const itemRef = window.fbRef(window.firebaseDB, `gallery_media/${currentCategory}/${id}`);
             window.fbRemove(itemRef).catch(err => {
                 console.error("Error al eliminar la foto/video en Firebase:", err);
             });
         }
 
-        function editarDescripcionMedia(id) {
-            if (!isAdmin || !window.firebaseDB) return;
+        function editarDescripcionMedia(id, isDefault) {
+            if (!isAdmin) return;
 
-            const itemActual = (firebaseGalleryData[currentCategory] || {})[id];
-            const descripcionActual = itemActual ? (itemActual.description || itemActual.name || '') : '';
+            let descripcionActual = '';
+            if (isDefault) {
+                const itemDefault = (DEFAULT_MEDIA[currentCategory] || []).find(i => i.id === id);
+                const override = defaultMediaOverrides[id];
+                descripcionActual = (override && override.description !== undefined) ? override.description : (itemDefault ? itemDefault.description : '');
+            } else {
+                const itemActual = (firebaseGalleryData[currentCategory] || {})[id];
+                descripcionActual = itemActual ? (itemActual.description || itemActual.name || '') : '';
+            }
 
             const nuevaDescripcion = prompt('Editar descripción:', descripcionActual);
             if (nuevaDescripcion === null) return; // canceló la edición
 
+            if (isDefault) {
+                if (!defaultMediaOverrides[id]) defaultMediaOverrides[id] = {};
+                defaultMediaOverrides[id].description = nuevaDescripcion.trim();
+                saveDefaultOverrides();
+                loadGallery();
+                return;
+            }
+
+            if (!window.firebaseDB) return;
             const itemRef = window.fbRef(window.firebaseDB, `gallery_media/${currentCategory}/${id}`);
             window.fbUpdate(itemRef, { description: nuevaDescripcion.trim() }).catch(err => {
                 console.error("Error al actualizar la descripción en Firebase:", err);
