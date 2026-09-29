@@ -1103,7 +1103,7 @@
             </div>
             
             <div class="photo-container">
-                <video id="video-reclutamiento" src="https://res.cloudinary.com/ty33bikf/video/upload/v1787068070/RECLUTAMIENTO.mp4" controls autoplay poster="images/fondo_formacion.png">
+                <video id="video-reclutamiento" src="https://res.cloudinary.com/ty33bikf/video/upload/v1787068070/RECLUTAMIENTO.mp4" controls autoplay muted playsinline preload="metadata" poster="images/fondo_formacion.png">
                     Tu navegador no soporta el reproductor de video.
                 </video>
             </div>
@@ -1205,7 +1205,7 @@
                     <p id="upload-instruction">Cargue imágenes o videos para esta carpeta específica.</p>
                     <p style="font-size:0.8rem; color:#d5c8a3; margin-top:4px;">(Modo Administrador Activo)</p>
                     <div style="margin-top: 10px;">
-                        <input type="text" id="media-description" class="upload-input-desc" placeholder="Escriba una descripción para la foto/video (Opcional)...">
+                        <input type="text" id="media-description" class="upload-input-desc" style="text-transform:uppercase;" placeholder="ESCRIBA UNA DESCRIPCIÓN PARA LA FOTO/VIDEO (OPCIONAL)...">
                     </div>
                     <label class="upload-btn-label" for="file-input">📁 Seleccionar Archivos</label>
                     <input type="file" id="file-input" accept="image/*,video/*" multiple onchange="handleFileUpload(event)">
@@ -1791,7 +1791,7 @@
             }
 
             const descInput = document.getElementById('media-description');
-            const descriptionText = descInput ? descInput.value.trim() : '';
+            const descriptionText = descInput ? descInput.value.trim().toLocaleUpperCase('es-BO') : '';
 
             Array.from(files).forEach(file => {
                 const reader = new FileReader();
@@ -1830,7 +1830,7 @@
             }
 
             const isVideo = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url);
-            const descriptionText = descInput ? descInput.value.trim() : '';
+            const descriptionText = descInput ? descInput.value.trim().toLocaleUpperCase('es-BO') : '';
 
             const mediaItem = {
                 name: url.split('/').pop(),
@@ -1850,6 +1850,10 @@
             });
         }
 
+        function normalizarDescripcionMayusculas(texto) {
+            return String(texto || '').toLocaleUpperCase('es-BO');
+        }
+
         function renderGalleryItem(grid, item, deletable) {
             const div = document.createElement('div');
             div.className = 'gallery-item';
@@ -1866,7 +1870,7 @@
 
             div.innerHTML = `
                 <div class="gallery-item-media">${mediaElement}</div>
-                <div class="gallery-item-caption">${item.description || item.name}</div>
+                <div class="gallery-item-caption">${normalizarDescripcionMayusculas(item.description || item.name)}</div>
                 ${deleteBtnHtml}
                 ${editBtnHtml}
             `;
@@ -1909,6 +1913,15 @@
                 count++;
                 const item = itemsCategoria[key];
                 item.id = key;
+                const descripcionOriginal = item.description || item.name || '';
+                const descripcionMayuscula = normalizarDescripcionMayusculas(descripcionOriginal);
+                if (item.description && item.description !== descripcionMayuscula && window.firebaseDB) {
+                    const itemRef = window.fbRef(window.firebaseDB, `gallery_media/${currentCategory}/${key}`);
+                    window.fbUpdate(itemRef, { description: descripcionMayuscula }).catch(err => {
+                        console.warn('No se pudo actualizar la descripción a mayúsculas:', err);
+                    });
+                }
+                item.description = descripcionMayuscula;
                 renderGalleryItem(grid, item, true);
             });
 
@@ -1966,7 +1979,7 @@
 
             if (isDefault) {
                 if (!defaultMediaOverrides[id]) defaultMediaOverrides[id] = {};
-                defaultMediaOverrides[id].description = nuevaDescripcion.trim();
+                defaultMediaOverrides[id].description = nuevaDescripcion.trim().toLocaleUpperCase('es-BO');
                 saveDefaultOverrides();
                 loadGallery();
                 return;
@@ -1974,7 +1987,7 @@
 
             if (!window.firebaseDB) return;
             const itemRef = window.fbRef(window.firebaseDB, `gallery_media/${currentCategory}/${id}`);
-            window.fbUpdate(itemRef, { description: nuevaDescripcion.trim() }).catch(err => {
+            window.fbUpdate(itemRef, { description: nuevaDescripcion.trim().toLocaleUpperCase('es-BO') }).catch(err => {
                 console.error("Error al actualizar la descripción en Firebase:", err);
             });
         }
@@ -2150,30 +2163,67 @@
             };
         }
 
+        // --- VIDEO DE PORTADA: manejo estable para archivos locales y URLs ---
+        let coverVideoObjectURL = null;
+
+        function aplicarVideoPortada(source, reproducir = false) {
+            const player = document.getElementById('video-reclutamiento');
+            if (!player || !source) return;
+
+            if (coverVideoObjectURL) {
+                URL.revokeObjectURL(coverVideoObjectURL);
+                coverVideoObjectURL = null;
+            }
+
+            if (source instanceof Blob) {
+                coverVideoObjectURL = URL.createObjectURL(source);
+                player.src = coverVideoObjectURL;
+            } else {
+                player.src = String(source);
+            }
+
+            player.load();
+
+            if (reproducir) {
+                const promesa = player.play();
+                if (promesa && typeof promesa.catch === 'function') {
+                    promesa.catch(() => {
+                        // Algunos navegadores bloquean la reproducción automática;
+                        // el video queda cargado y listo para iniciar con el control Play.
+                    });
+                }
+            }
+        }
+
         function subirVideoPortada(event) {
             if (!isAdmin || !db) return;
-            const file = event.target.files[0];
+            const file = event.target.files && event.target.files[0];
             if (!file) return;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const videoBase64 = e.target.result;
-                const player = document.getElementById('video-reclutamiento');
-                if (player) {
-                    player.src = videoBase64;
-                    player.play();
-                }
+            if (!file.type || !file.type.startsWith('video/')) {
+                alert('⚠️ Seleccione un archivo de video válido.');
+                event.target.value = '';
+                return;
+            }
 
-                const tx = db.transaction("settings", "readwrite");
-                const store = tx.objectStore("settings");
-                store.put({ key: "coverVideo", data: videoBase64 });
+            // Se guarda como Blob en IndexedDB, evitando convertir el video completo a Base64.
+            // Esto reduce el tamaño almacenado y evita fallos con videos grandes.
+            aplicarVideoPortada(file, true);
 
-                tx.oncomplete = function() {
-                    alert('✅ Video de portada actualizado correctamente.');
-                    closeModal('admin-modal');
-                };
+            const tx = db.transaction("settings", "readwrite");
+            const store = tx.objectStore("settings");
+            store.put({ key: "coverVideo", data: file, type: file.type, name: file.name });
+
+            tx.oncomplete = function() {
+                alert('✅ Video de portada actualizado correctamente.');
+                event.target.value = '';
+                closeModal('admin-modal');
             };
-            reader.readAsDataURL(file);
+
+            tx.onerror = function() {
+                console.error('Error al guardar el video de portada:', tx.error);
+                alert('⚠️ No se pudo guardar el video de portada en este navegador.');
+            };
         }
 
         function agregarVideoPortadaURL() {
@@ -2185,36 +2235,49 @@
                 return;
             }
 
-            const player = document.getElementById('video-reclutamiento');
-            if (player) {
-                player.src = url;
-                player.play();
-            }
+            aplicarVideoPortada(url, true);
 
             const tx = db.transaction("settings", "readwrite");
             const store = tx.objectStore("settings");
-            store.put({ key: "coverVideo", data: url });
+            store.put({ key: "coverVideo", data: url, type: 'url' });
 
             tx.oncomplete = function() {
                 alert('✅ Video de portada actualizado correctamente.');
                 if (urlInput) urlInput.value = '';
                 closeModal('admin-modal');
             };
+
+            tx.onerror = function() {
+                console.error('Error al guardar la URL del video:', tx.error);
+                alert('⚠️ No se pudo guardar la URL del video de portada.');
+            };
         }
 
         function cargarVideoPortadaGuardado() {
             const player = document.getElementById('video-reclutamiento');
-            if (!db) return;
+            if (!db || !player) return;
+
             const tx = db.transaction("settings", "readonly");
             const store = tx.objectStore("settings");
             const getReq = store.get("coverVideo");
 
             getReq.onsuccess = function() {
-                if (getReq.result && getReq.result.data) {
-                    if (player) player.src = getReq.result.data;
-                } else if (player && !player.getAttribute('src')) {
-                    player.src = DEFAULT_COVER_VIDEO;
+                const guardado = getReq.result;
+
+                if (guardado && guardado.data) {
+                    // Compatibilidad con los videos antiguos guardados como Base64.
+                    if (guardado.data instanceof Blob) {
+                        aplicarVideoPortada(guardado.data, false);
+                    } else {
+                        aplicarVideoPortada(guardado.data, false);
+                    }
+                } else {
+                    aplicarVideoPortada(DEFAULT_COVER_VIDEO, false);
                 }
+            };
+
+            getReq.onerror = function() {
+                aplicarVideoPortada(DEFAULT_COVER_VIDEO, false);
             };
         }
 
